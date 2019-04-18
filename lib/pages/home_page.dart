@@ -1,87 +1,262 @@
 import 'package:flutter/material.dart';
-import 'package:dio/src/dio.dart';
+import '../service/service_url.dart';
+import 'package:flutter_swiper/flutter_swiper.dart';
+import 'dart:convert';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
-class homePage extends StatefulWidget {
-  final Widget child;
 
-  homePage({Key key, this.child}) : super(key: key);
-
-  _homePageState createState() => _homePageState();
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
 }
 
-class _homePageState extends State<homePage> {
-  TextEditingController typeController = TextEditingController();
-  String show_text = '欢迎您';
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+
+  @override
+  bool get wantKeepAlive =>true;
+
+  String homePageContent = '正在获取数据';
+
+  @override
+  void initState() {
+    getHomePageContent().then((val) {
+      setState(() {
+        homePageContent = val.toString();
+      });
+    });
+
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('天上人间'),
+        title: Text('百姓生活'),
       ),
-      body: SingleChildScrollView(
-        child: 
-      Container(
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: typeController,
-              decoration: InputDecoration(
-                contentPadding: EdgeInsets.all(10.0),
-                labelText: '美女类型',
-                helperText: '请输入类型',
+      body: FutureBuilder(
+        future: getHomePageContent(),
+        //initialData: InitialData,
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.hasData) {
+            var data = json.decode(snapshot.data.toString());
+            print(data);
+            List<Map> swiper = (data['data']['slides'] as List).cast();
+            List<Map> navgation = (data['data']['category'] as List).cast();
+            String adPicture =
+                data['data']['advertesPicture']['PICTURE_ADDRESS'];
+            String leaderIamge = data['data']['shopInfo']['leaderImage'];
+            String phone = data['data']['shopInfo']['leaderPhone'];
+            List<Map> recommendList = (data['data']['recommend'] as List).cast();
+            return SingleChildScrollView(
+             
+              child: Column(
+                children: <Widget>[
+                SwiperDiy(swiper),
+                TopNavigator(navgation),
+                AddBanner(adPicture),
+                LeaderPhone(leaderIamge, phone),
+                Recommend(recommendList),
+              ],
               ),
-              autofocus: false,
-            ),
-            RaisedButton(
-              onPressed: _choiseAction,
-              
-              child: Text('选择完毕'),
-            ),
-            Text(
-              show_text,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ],
-        ),
+            );
+           
+          } else {
+            return Center(
+              child: Text(
+                '加载中',
+              ),
+            );
+          }
+        },
       ),
+    );
+  }
+}
+
+//首页轮播组建
+class SwiperDiy extends StatelessWidget {
+  final List swiperDateList;
+  SwiperDiy(this.swiperDateList);
+  @override
+  Widget build(BuildContext context) {
+    ScreenUtil.instance = ScreenUtil(width: 750, height: 1334)..init(context);
+    print('设备像素密度：${ScreenUtil.pixelRatio}');
+    print('设备像素密度：${ScreenUtil.screenHeight}');
+    print('设备像素密度：${ScreenUtil.screenWidth}');
+    var swiper = Swiper(
+      itemBuilder: (BuildContext context, int index) {
+        return Image.network('${swiperDateList[index]['image']}',
+            fit: BoxFit.fill);
+      },
+      itemCount: 3,
+      pagination: SwiperPagination(),
+      autoplay: true,
+    );
+    return Container(
+      height: ScreenUtil().setHeight(333),
+      width: ScreenUtil().setWidth(750),
+      child: swiper,
+    );
+  }
+}
+
+class TopNavigator extends StatelessWidget {
+  final List navigatorList;
+  TopNavigator(this.navigatorList);
+  Widget _gridViewItemUI(BuildContext context, item) {
+    return InkWell(
+      onTap: () {
+        print('点击了导航');
+      },
+      child: Column(
+        children: <Widget>[
+          Image.network(
+            item['image'],
+            width: ScreenUtil().setWidth(95),
+          ),
+          Text(item['mallCategoryName']),
+        ],
       ),
     );
   }
 
-  void _choiseAction() {
-    print('被执行......');
-    if (typeController.text.toString() == '') {
-      showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-                title: Text('不能唯恐'),
-              ));
-    } else {
-      getHttp(typeController.text.toString()).then((val) {
-        setState(() {
-          show_text = val['data']['name'].toString();
-        });
-      });
+  @override
+  Widget build(BuildContext context) {
+    if (this.navigatorList.length > 10) {
+      this.navigatorList.removeRange(10, this.navigatorList.length);
     }
+    return Container(
+      height: ScreenUtil().setHeight(320),
+      padding: EdgeInsets.all(3.0),
+      child: GridView.count(
+        crossAxisCount: 5,
+        padding: EdgeInsets.all(5.0),
+        children: navigatorList.map((item) {
+          return _gridViewItemUI(context, item);
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class AddBanner extends StatelessWidget {
+  final String adPicture;
+  AddBanner(this.adPicture);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Image.network(adPicture),
+    );
+  }
+}
+
+//打电话
+
+class LeaderPhone extends StatelessWidget {
+  final String leaderImage;
+  final String phone;
+  LeaderPhone(this.leaderImage, this.phone);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: InkWell(
+        onTap: _launchURL, 
+        child: Image.network(leaderImage),
+      ),
+    );
   }
 
-  Future getHttp(String typText) async {
-    try {
+  void _launchURL() async {
+    
+    String url = 'tel'+phone;
+    if (await canLaunch(url)) {
+      await launch(url);
+    }else {
+      throw 'url 不能进行访问';
+    }
+  }
+}
+
+
+//商品推荐类
+class Recommend extends StatelessWidget {
+  final List recommendList;
+  Recommend(this.recommendList);
+//标题
+  Widget _titleWidget(){
+    return Container(
+      alignment: Alignment.centerLeft,
+      padding: EdgeInsets.fromLTRB(10.0, 2.0, 0, 5.0),
+     decoration: BoxDecoration(
+       color: Colors.white,
+       border: Border(
+         bottom: BorderSide(width:1,color: Colors.black12),
+       )
+     ),
+     child: Text('商品推荐',style: TextStyle(color: Colors.pink),),
+    );
+  }
+//商品单独方法
+Widget _item(int index){
+  return InkWell(
+    onTap: (){
+     
+    },
+    child: Container(
+      height: ScreenUtil().setHeight(330),
+      width: ScreenUtil().setWidth(250),
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+
+        color: Colors.white,
+        border:Border(left: BorderSide(width: 1,color: Colors.black12)),
+      ),
+      child:  Column(
+      children: <Widget>[
+        Image.network(recommendList[index]['image']),
+        Text('¥${recommendList[index]['mallPrice']}'),
+        Text('¥${recommendList[index]['price']}',style: TextStyle(
+          decoration: TextDecoration.lineThrough,color: Colors.grey
+        ),),
+      ],
+    ),
+    )
+    
+  );
+}
+
+//横行列表方法
+Widget _recommendList() {
+  return Container(
+    height: ScreenUtil().setHeight(300),
+    margin: EdgeInsets.only(top: 10.0),
+    child: ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: recommendList.length,
+      itemBuilder: (BuildContext context, int index) {
+      return _item(index);
+     },
+    ),
+  );
+}
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: ScreenUtil().setHeight(360),
+      margin: EdgeInsets.only(top: 10.0),
+      child:Column(
+        children: <Widget>[
+          _titleWidget(),
+          _recommendList() ,
+        ],
+      )
       
-      Response response;
-      var data = {'name': typText};
-      response = (await Dio().get(
-          'https://www.easy-mock.com/mock/5c60131a4bed3a6342711498/baixing/dabaojian',
-          queryParameters: data)) as Response;
-      return response.data;
-    } catch (e) {
-      print(e);
-    }
+    );
   }
 }
 
-class Response {
-  Future get data => null;
-}
+//楼层标题
