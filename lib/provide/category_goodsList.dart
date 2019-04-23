@@ -12,4 +12,6 @@ class CategoryGoodsListModelProvide with ChangeNotifier {
     goodsList.addAll(list);
     notifyListeners();
   }
+
+  
 }

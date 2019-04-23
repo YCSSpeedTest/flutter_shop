@@ -5,6 +5,7 @@ import 'package:flutter_swiper/flutter_swiper.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_easyrefresh/easy_refresh.dart';
+import 'package:flutter_shop/routers/application.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -130,7 +131,9 @@ class _HomePageState extends State<HomePage>
     if (hotGoodsList.length != 0) {
       List<Widget> listwidget = hotGoodsList.map((val) {
         return InkWell(
-          onTap: () {},
+          onTap: () {
+      Application.router.navigateTo(context, '/detail?id=${val['goodsId']}');
+          },
           child: Container(
             width: ScreenUtil().setWidth(372),
             color: Colors.white,
@@ -200,8 +203,14 @@ class SwiperDiy extends StatelessWidget {
     // print('设备像素密度：${ScreenUtil.screenWidth}');
     var swiper = Swiper(
       itemBuilder: (BuildContext context, int index) {
-        return Image.network('${swiperDateList[index]['image']}',
-            fit: BoxFit.fill);
+        return InkWell(
+          onTap: (){
+            Application.router.navigateTo(context, '/detail?id=${swiperDateList[index]['goodsId']}');
+          },
+          child: Image.network('${swiperDateList[index]['image']}',
+            fit: BoxFit.fill),
+        );
+         
       },
       itemCount: 3,
       pagination: SwiperPagination(),
@@ -222,6 +231,8 @@ class TopNavigator extends StatelessWidget {
     return InkWell(
       onTap: () {
         print('点击了导航');
+         
+
       },
       child: Column(
         children: <Widget>[
@@ -267,7 +278,6 @@ class AddBanner extends StatelessWidget {
 }
 
 //打电话
-
 class LeaderPhone extends StatelessWidget {
   final String leaderImage;
   final String phone;
@@ -284,9 +294,9 @@ class LeaderPhone extends StatelessWidget {
   }
 
   void _launchURL() async {
-    String url = 'tel' + phone;
+    String url = 'tel:' + phone;
     if (await canLaunch(url)) {
-      await launch(url);
+      launch(url);
     } else {
       throw 'url 不能进行访问';
     }
@@ -315,9 +325,11 @@ class Recommend extends StatelessWidget {
   }
 
 //商品单独方法
-  Widget _item(int index) {
+  Widget _item(BuildContext context, int index) {
     return InkWell(
-        onTap: () {},
+        onTap: () {
+          Application.router.navigateTo(context, '/detail?id=${recommendList[index]['goodsId']}');
+        },
         child: Container(
           height: ScreenUtil().setHeight(340),
           width: ScreenUtil().setWidth(250),
@@ -349,7 +361,7 @@ class Recommend extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: recommendList.length,
         itemBuilder: (BuildContext context, int index) {
-          return _item(index);
+          return _item(context,index);
         },
       ),
     );
@@ -394,41 +406,42 @@ class FloorContent extends StatelessWidget {
       padding: EdgeInsets.all(8.0),
       child: Column(
         children: <Widget>[
-          _firstRow(),
-          _otherGoods(),
+          _firstRow(context),
+          _otherGoods(context),
         ],
       ),
     );
   }
 
-  Widget _otherGoods() {
+  Widget _otherGoods(BuildContext context) {
     return Row(
       children: <Widget>[
-        _goodsItem(floorGoodsList[3]),
-        _goodsItem(floorGoodsList[4]),
+        _goodsItem(context,floorGoodsList[3]),
+        _goodsItem(context,floorGoodsList[4]),
       ],
     );
   }
 
-  Widget _firstRow() {
+  Widget _firstRow(BuildContext context) {
     return Row(
       children: <Widget>[
-        _goodsItem(floorGoodsList[0]),
+        _goodsItem(context,floorGoodsList[0]),
         Column(
           children: <Widget>[
-            _goodsItem(floorGoodsList[1]),
-            _goodsItem(floorGoodsList[2]),
+            _goodsItem(context,floorGoodsList[1]),
+            _goodsItem(context,floorGoodsList[2]),
           ],
         ),
       ],
     );
   }
 
-  Widget _goodsItem(Map goods) {
+  Widget _goodsItem(BuildContext context, Map goods) {
     return Container(
       width: ScreenUtil().setWidth(355),
       child: InkWell(
         onTap: () {
+          Application.router.navigateTo(context, '/detail?id=${goods['goodsId']}');
           print('点击了商品');
         },
         child: Image.network(goods['image']),
