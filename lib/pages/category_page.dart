@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_shop/routers/application.dart';
 import '../service/service_url.dart';
 import 'dart:convert';
 import '../model/category.dart';
@@ -351,7 +352,9 @@ class _CategoryGoodsListState extends State<CategoryGoodsList> {
   Widget _goodsItem(List newList, int index) {
     return InkWell(
       onTap: () {
-        
+        print('11111111');
+         Application.router.navigateTo(
+              context, '/detail?id=${newList[index].goodsId}');
       },
       child: Container(
         padding: EdgeInsets.only(bottom: 5.0, top: 5.0),

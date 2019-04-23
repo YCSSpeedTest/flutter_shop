@@ -6,7 +6,7 @@ class ChildCategory with ChangeNotifier {  //全局可用
   String noMoreText= '';//显示没有数据提示
   int childIndex = 0;//子类高亮索引
    String categoryId = '4'; //大类id
-    String categorySubId = ''; //大类id
+   String categorySubId = ''; //大类id
   //大类切换逻辑
   List <BxMallSubDto> childCategroyList = [];
   getChildCategory(List<BxMallSubDto> list,String id){

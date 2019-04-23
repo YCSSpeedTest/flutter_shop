@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_shop/provide/currentIndex.dart';
+import 'package:provide/provide.dart';
 import '../service/service_url.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'dart:convert';
@@ -14,15 +16,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
+  GlobalKey<RefreshFooterState> _footerkey =
+  new GlobalKey<RefreshFooterState>(); //保持页面状态
+  bool get wantKeepAlive => true;
   int page = 1;
   List<Map> hotGoodsList = [];
-  GlobalKey <RefreshFooterState>_footerkey = new GlobalKey<RefreshFooterState>();
-  @override
-  bool get wantKeepAlive => true;
-
   String homePageContent = '正在获取数据';
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +36,7 @@ class _HomePageState extends State<HomePage>
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.hasData) {
             var data = json.decode(snapshot.data.toString());
-           // print(data);
+            // print(data);
             List<Map> swiper = (data['data']['slides'] as List).cast();
             List<Map> navgation = (data['data']['category'] as List).cast();
             String adPicture =
@@ -53,17 +52,17 @@ class _HomePageState extends State<HomePage>
             List<Map> floor2 = (data['data']['floor2'] as List).cast();
             List<Map> floor3 = (data['data']['floor3'] as List).cast();
             return EasyRefresh(
-               //自定义footer
-               refreshFooter: ClassicsFooter(
-                 bgColor: Colors.white,
-                 textColor: Colors.pink,
-                 moreInfoColor: Colors.pink,
-                 showMore: true,
-                 noMoreText: '',
-                 moreInfo: '加载中',
-                 loadReadyText: '上拉加载',
-                 key: _footerkey,
-               ),
+              //自定义footer
+              refreshFooter: ClassicsFooter(
+                bgColor: Colors.white,
+                textColor: Colors.pink,
+                moreInfoColor: Colors.pink,
+                showMore: true,
+                noMoreText: '',
+                moreInfo: '加载中',
+                loadReadyText: '上拉加载',
+                key: _footerkey,
+              ),
 
               child: ListView(
                 children: <Widget>[
@@ -84,14 +83,15 @@ class _HomePageState extends State<HomePage>
               loadMore: () async {
                 print('开始加载更多。。。。。。');
                 var formData = {'page': page};
-               await request('homePageBelowContent', formData: formData).then((val) {
+                await request('homePageBelowContent', formData: formData)
+                    .then((val) {
                   var data = json.decode(val.toString());
                   List<Map> newGoodsList = (data['data'] as List).cast();
                   setState(() {
                     hotGoodsList.addAll(newGoodsList);
                     page++;
                   });
-                 // print(data);
+                  // print(data);
                 });
               },
             );
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage>
         hotGoodsList.addAll(newGoodsList);
         page++;
       });
-    //  print(data);
+      //  print(data);
     });
   }
 
@@ -132,7 +132,8 @@ class _HomePageState extends State<HomePage>
       List<Widget> listwidget = hotGoodsList.map((val) {
         return InkWell(
           onTap: () {
-      Application.router.navigateTo(context, '/detail?id=${val['goodsId']}');
+            Application.router
+                .navigateTo(context, '/detail?id=${val['goodsId']}');
           },
           child: Container(
             width: ScreenUtil().setWidth(372),
@@ -204,13 +205,13 @@ class SwiperDiy extends StatelessWidget {
     var swiper = Swiper(
       itemBuilder: (BuildContext context, int index) {
         return InkWell(
-          onTap: (){
-            Application.router.navigateTo(context, '/detail?id=${swiperDateList[index]['goodsId']}');
+          onTap: () {
+            Application.router.navigateTo(
+                context, '/detail?id=${swiperDateList[index]['goodsId']}');
           },
           child: Image.network('${swiperDateList[index]['image']}',
-            fit: BoxFit.fill),
+              fit: BoxFit.fill),
         );
-         
       },
       itemCount: 3,
       pagination: SwiperPagination(),
@@ -224,6 +225,7 @@ class SwiperDiy extends StatelessWidget {
   }
 }
 
+//头部两列横向导航
 class TopNavigator extends StatelessWidget {
   final List navigatorList;
   TopNavigator(this.navigatorList);
@@ -231,8 +233,8 @@ class TopNavigator extends StatelessWidget {
     return InkWell(
       onTap: () {
         print('点击了导航');
-         
-
+         Provide.value<CurrentIndexProvide>(context).changeIndex(1);
+               //     Navigator.pop(context);
       },
       child: Column(
         children: <Widget>[
@@ -328,7 +330,8 @@ class Recommend extends StatelessWidget {
   Widget _item(BuildContext context, int index) {
     return InkWell(
         onTap: () {
-          Application.router.navigateTo(context, '/detail?id=${recommendList[index]['goodsId']}');
+          Application.router.navigateTo(
+              context, '/detail?id=${recommendList[index]['goodsId']}');
         },
         child: Container(
           height: ScreenUtil().setHeight(340),
@@ -361,7 +364,7 @@ class Recommend extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: recommendList.length,
         itemBuilder: (BuildContext context, int index) {
-          return _item(context,index);
+          return _item(context, index);
         },
       ),
     );
@@ -416,8 +419,8 @@ class FloorContent extends StatelessWidget {
   Widget _otherGoods(BuildContext context) {
     return Row(
       children: <Widget>[
-        _goodsItem(context,floorGoodsList[3]),
-        _goodsItem(context,floorGoodsList[4]),
+        _goodsItem(context, floorGoodsList[3]),
+        _goodsItem(context, floorGoodsList[4]),
       ],
     );
   }
@@ -425,11 +428,11 @@ class FloorContent extends StatelessWidget {
   Widget _firstRow(BuildContext context) {
     return Row(
       children: <Widget>[
-        _goodsItem(context,floorGoodsList[0]),
+        _goodsItem(context, floorGoodsList[0]),
         Column(
           children: <Widget>[
-            _goodsItem(context,floorGoodsList[1]),
-            _goodsItem(context,floorGoodsList[2]),
+            _goodsItem(context, floorGoodsList[1]),
+            _goodsItem(context, floorGoodsList[2]),
           ],
         ),
       ],
@@ -441,7 +444,8 @@ class FloorContent extends StatelessWidget {
       width: ScreenUtil().setWidth(355),
       child: InkWell(
         onTap: () {
-          Application.router.navigateTo(context, '/detail?id=${goods['goodsId']}');
+          Application.router
+              .navigateTo(context, '/detail?id=${goods['goodsId']}');
           print('点击了商品');
         },
         child: Image.network(goods['image']),
