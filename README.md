@@ -34,10 +34,10 @@ A new Flutter project.
  
  <ul> 总体架构 
  
-  <ul> 总体架构 
-  <ul> 总体架构 
-   
-    <ul> 总体架构 
+ <li>main函数加载一个可以切换四个页面的IndexPage</li>
+ 
+ <li>各个子界面采用组件化搭建，数据模型化展示，不同类的通讯采用Prover状态管理实现</li>
+  
  
  
  
