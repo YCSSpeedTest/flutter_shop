@@ -18,6 +18,8 @@ class CartProvide with ChangeNotifier {
 
     bool isHave = false;
     int ival = 0;
+    allPrice = 0;
+    allGoodsCount = 0;
     //循环遍历 如果列表里有该数据，数量进行加一
     tempList.forEach((item) {
       if (item['goodsId'] == goodsId) {
@@ -25,6 +27,10 @@ class CartProvide with ChangeNotifier {
         cartList[ival].count++;
         isHave = true;
       }
+      if (item['isCheck']) {
+        allPrice +=(cartList[ival].price*cartList[ival].count);
+        allGoodsCount +=  cartList[ival].count;
+      } 
       ival++;
     });
     if (!isHave) {
@@ -38,6 +44,9 @@ class CartProvide with ChangeNotifier {
       };
       cartList.add(CardInfoModel.fromJson(newGoods));
       tempList.add(newGoods);
+      
+      allPrice+=(count*price);
+      allGoodsCount +=(count);
     }
     //把字符串进行encode
     cartString = json.encode(tempList).toString();
